@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# tt-metalium — interactive TT-NN / Metalium dev shell in the slim container.
+#
+# Migrated from tt-installer's ~/.local/bin/tt-metalium and adapted for this
+# project: the container's working tree is THIS repo (TT_ROOT), mounted at /work,
+# rather than the whole of $HOME. TT_ROOT and TT_METALIUM_IMAGE are exported by
+# `sourceme`; if you run this without sourcing, TT_ROOT falls back to the repo
+# root derived from this script's location (util/..).
+#
+# A project-local cache (TT_CACHE_DIR, default $TT_ROOT/.cache) is mounted at the
+# container's /root/.cache (this image also runs as root) so JIT-compiled
+# Blackhole kernels persist across runs instead of being lost to --rm. Shared
+# with tt-metalium-models; cache entries are hash-keyed per image so they don't
+# collide.
+set -euo pipefail
+
+ROOT="${TT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+IMAGE="${TT_METALIUM_IMAGE:-ghcr.io/tenstorrent/tt-metal/tt-metalium-ubuntu-22.04-release-amd64:latest-rc}"
+CACHE="${TT_CACHE_DIR:-${ROOT}/.cache}"
+mkdir -p "${CACHE}"
+
+exec docker run --rm -it \
+  --privileged \
+  --log-driver none \
+  --volume=/dev/hugepages-1G:/dev/hugepages-1G \
+  --volume="${ROOT}":/work \
+  --volume="${CACHE}":/root/.cache \
+  --device=/dev/tenstorrent:/dev/tenstorrent \
+  --workdir=/work \
+  --env=DISPLAY="${DISPLAY:-}" \
+  --env=TERM="${TERM:-xterm-256color}" \
+  --network=host \
+  --security-opt label=disable \
+  --entrypoint /bin/bash \
+  "${IMAGE}" "$@"

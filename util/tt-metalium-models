@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# tt-metalium-models — the larger demos/models container (prebuilt model demos).
+#
+# Migrated from tt-installer's ~/.local/bin/tt-metalium-models. The tt-metal
+# source + prebuilt models are baked into the image at /tt-metal (the image's
+# WorkingDir, runs as root), so we do NOT override the workdir — you land in the
+# demo tree ready to go. ttnn imports with no venv (TT_METAL_HOME=/tt-metal).
+# Demos are run with pytest, e.g. (single p150a, single-device variants only):
+#   pytest --disable-warnings models/demos/blackhole/sentence_bert/tests/pcc/test_ttnn_sentencebert_model.py::test_ttnn_sentence_bert_model
+#
+# This repo is mounted at /work for dropping in scripts/outputs. A project-local
+# cache (TT_CACHE_DIR, default $TT_ROOT/.cache) is mounted at the container's
+# /root/.cache so HuggingFace weights AND compiled Blackhole kernels
+# (tt-metal-cache) persist across runs instead of being lost to --rm.
+#
+# NOTE: this container is for trying out demos, not production; it changes often.
+# See https://github.com/tenstorrent/tt-metal/issues/25602
+set -euo pipefail
+
+ROOT="${TT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+IMAGE="${TT_METALIUM_MODELS_IMAGE:-ghcr.io/tenstorrent/tt-metal/tt-metalium-ubuntu-22.04-release-models-amd64:latest-rc}"
+CACHE="${TT_CACHE_DIR:-${ROOT}/.cache}"
+mkdir -p "${CACHE}"
+
+exec docker run --rm -it \
+  --privileged \
+  --log-driver none \
+  --volume=/dev/hugepages-1G:/dev/hugepages-1G \
+  --volume="${ROOT}":/work \
+  --volume="${CACHE}":/root/.cache \
+  --device=/dev/tenstorrent:/dev/tenstorrent \
+  --env=DISPLAY="${DISPLAY:-}" \
+  --env=TERM="${TERM:-xterm-256color}" \
+  --network=host \
+  --security-opt label=disable \
+  --entrypoint /bin/bash \
+  "${IMAGE}" "$@"

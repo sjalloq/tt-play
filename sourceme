@@ -1,0 +1,63 @@
+# sourceme — set up and activate the Tenstorrent bringup venv (uv, lockless).
+# ---------------------------------------------------------------------------
+#   source sourceme                  # create .venv (if missing) + install deps
+#   source sourceme --clean          # recreate .venv from scratch
+#   source sourceme --python 3.11    # use a specific interpreter (default 3.12)
+#
+# MUST be sourced, not executed, so the venv activates in your shell.
+# Python is pinned to 3.12: tt-umd ships wheels for cp310-cp313 only (no cp314,
+# no sdist). uv auto-downloads a managed 3.12 if the system lacks one.
+# Dependencies come from pyproject.toml via `uv pip install -e .` — no uv.lock.
+# ---------------------------------------------------------------------------
+
+if [ -n "${BASH_SOURCE:-}" ] && [ "${BASH_SOURCE[0]}" = "${0}" ]; then
+    echo "sourceme: source this script, don't run it:  source sourceme [--clean]" >&2
+    exit 1
+fi
+
+_ttbringup_setup() {
+    local clean=0 py="${TT_PYTHON:-3.12}" root venv
+    root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    venv="$root/.venv"
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --clean)      clean=1 ;;
+            --python)     py="$2"; shift ;;
+            --python=*)   py="${1#*=}" ;;
+            -h|--help)    printf 'usage: source sourceme [--clean] [--python X.Y]\n'; return 0 ;;
+            *)            printf 'sourceme: unknown argument: %s\n' "$1" >&2; return 2 ;;
+        esac
+        shift
+    done
+
+    command -v uv >/dev/null 2>&1 || { echo "sourceme: 'uv' not found on PATH" >&2; return 1; }
+    [ "$clean" -eq 1 ] && rm -rf "$venv"
+
+    # 1. Create the venv (skip if present), 2. install deps editable from pyproject.
+    [ -d "$venv" ] || uv venv "$venv" --python "$py" || return 1
+    . "$venv/bin/activate" || { echo "sourceme: failed to activate $venv" >&2; return 1; }
+    if ! ( cd "$root" && uv pip install -e . --group dev --group docs ); then
+        echo "sourceme: dependency install failed (try: source sourceme --clean --python 3.12)" >&2
+        return 1
+    fi
+
+    # Environment for the util/tt-* container wrappers (TT_ROOT anchors paths;
+    # image refs are overridable; util/ on PATH makes the wrappers bare commands).
+    export TT_ROOT="$root"
+    export TT_METALIUM_IMAGE="${TT_METALIUM_IMAGE:-ghcr.io/tenstorrent/tt-metal/tt-metalium-ubuntu-22.04-release-amd64:latest-rc}"
+    export TT_METALIUM_MODELS_IMAGE="${TT_METALIUM_MODELS_IMAGE:-ghcr.io/tenstorrent/tt-metal/tt-metalium-ubuntu-22.04-release-models-amd64:latest-rc}"
+    export TT_FORGE_IMAGE="${TT_FORGE_IMAGE:-ghcr.io/tenstorrent/tt-xla-slim:latest}"
+    case ":$PATH:" in
+        *":$root/util:"*) ;;
+        *) export PATH="$root/util:$PATH" ;;
+    esac
+
+    echo "==> Active: $(python --version 2>&1)  ($venv)   TT_ROOT=$root"
+    printf '    tt-flash %s | tt-smi %s | wrappers: tt-metalium, tt-metalium-models, tt-forge\n' \
+        "$(tt-flash --version 2>/dev/null || echo missing)" \
+        "$(tt-smi --version 2>/dev/null || echo missing)"
+}
+
+_ttbringup_setup "$@"
+unset -f _ttbringup_setup

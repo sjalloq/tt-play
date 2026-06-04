@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# tt-forge — tt-forge / tt-xla (PyTorch + JAX/XLA front-end) container shell.
+#
+# Migrated from tt-installer's ~/.local/bin/tt-forge and adapted to mount THIS
+# repo (TT_ROOT) at /work instead of $HOME. Forge needs a couple of extra host
+# mounts the Metalium images don't: the 2MB hugepage fs and /lib/modules.
+# TT_ROOT and TT_FORGE_IMAGE are exported by `sourceme`; TT_ROOT falls back to
+# the repo root (util/..) when this is run without sourcing.
+set -euo pipefail
+
+ROOT="${TT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+IMAGE="${TT_FORGE_IMAGE:-ghcr.io/tenstorrent/tt-xla-slim:latest}"
+
+exec docker run --rm -it \
+  --privileged \
+  --log-driver none \
+  --volume=/dev/hugepages:/dev/hugepages \
+  --volume=/dev/hugepages-1G:/dev/hugepages-1G \
+  --volume=/lib/modules:/lib/modules \
+  --volume="${ROOT}":/work \
+  --device=/dev/tenstorrent:/dev/tenstorrent \
+  --workdir=/work \
+  --env=DISPLAY="${DISPLAY:-}" \
+  --env=TERM="${TERM:-xterm-256color}" \
+  --network=host \
+  --security-opt label=disable \
+  --entrypoint /bin/bash \
+  "${IMAGE}" "$@"

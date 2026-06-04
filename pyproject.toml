@@ -1,0 +1,24 @@
+[project]
+name = "tt-bringup"
+version = "0.1.0"
+description = "Tenstorrent Blackhole p150a bringup — tooling, firmware flashing, and experiments"
+requires-python = ">=3.10"
+dependencies = [
+    "tt-flash>=3.8.0", # firmware flashing; >=3.6.0 avoids Blackhole board-ID loss
+    "tt-smi>=5.2.0",   # system management / card verification
+]
+
+# Optional toolchains. Install on demand: uv pip install --group <name>
+[dependency-groups]
+dev = ["ipython"]
+docs = ["sphinx>=7.0", "sphinx-rtd-theme>=2.0", "sphinx-rtd-size"]
+
+# Minimal build backend so `uv pip install -e .` installs the dependencies above
+# as an editable project. No Python package ships yet (py-modules = []); add
+# packages here when we start shipping code.
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = []

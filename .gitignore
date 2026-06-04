@@ -1,0 +1,16 @@
+# Python
+*.pyc
+__pycache__
+*.egg-info
+
+# TT Installation media
+src/
+
+# Sphinx build output
+docs/build/
+
+# Container cache (HF weights + compiled Blackhole kernels) mounted by util/tt-metalium-models
+.cache/
+
+# tt-metal runtime artifacts (inspector/watcher/reports) written to cwd by ttnn
+generated/
