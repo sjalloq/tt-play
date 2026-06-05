@@ -48,6 +48,7 @@ _ttbringup_setup() {
     export TT_METALIUM_IMAGE="${TT_METALIUM_IMAGE:-ghcr.io/tenstorrent/tt-metal/tt-metalium-ubuntu-22.04-release-amd64:latest-rc}"
     export TT_METALIUM_MODELS_IMAGE="${TT_METALIUM_MODELS_IMAGE:-ghcr.io/tenstorrent/tt-metal/tt-metalium-ubuntu-22.04-release-models-amd64:latest-rc}"
     export TT_FORGE_IMAGE="${TT_FORGE_IMAGE:-ghcr.io/tenstorrent/tt-xla-slim:latest}"
+    export TT_LLM_IMAGE="${TT_LLM_IMAGE:-ghcr.io/tenstorrent/tt-inference-server/vllm-tt-metal-src-release-ubuntu-22.04-amd64:0.10.0-55fd115-aa4ae1e}"
     case ":$PATH:" in
         *":$root/util:"*) ;;
         *) export PATH="$root/util:$PATH" ;;
@@ -57,6 +58,7 @@ _ttbringup_setup() {
     printf '    tt-flash %s | tt-smi %s | wrappers: tt-metalium, tt-metalium-models, tt-forge\n' \
         "$(tt-flash --version 2>/dev/null || echo missing)" \
         "$(tt-smi --version 2>/dev/null || echo missing)"
+    printf '    LLM: tt-llm-server (vLLM on p150) + pi-p150a (Pi agentic harness)\n'
 }
 
 _ttbringup_setup "$@"

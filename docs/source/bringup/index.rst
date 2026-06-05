@@ -12,3 +12,4 @@ top-level ``Makefile`` and ``sourceme``.
    tooling
    firmware
    containers
+   agentic-harness

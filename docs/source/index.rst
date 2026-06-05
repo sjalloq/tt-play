@@ -12,6 +12,7 @@ runtime — and the commands to reproduce it.
 
    overview
    bringup/index
+   porting/index
    verification
 
 .. toctree::

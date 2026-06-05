@@ -1,0 +1,15 @@
+[Unit]
+Description=Script that configures hugepages for Tenstorrent ASICs
+Before=sysinit.target
+DefaultDependencies=no
+
+[Service]
+Type=oneshot
+ExecStart=/opt/tenstorrent/bin/hugepages-setup.sh
+User=root
+Restart=no
+SuccessExitStatus=0
+TimeoutStopSec=10s
+
+[Install]
+WantedBy=sysinit.target

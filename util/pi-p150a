@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# pi-p150a — launch the Pi coding agent wired to the local Blackhole p150 LLM.
+#
+# Loads the repo's provider extension (pi/tt-p150a-provider.ts) and selects the
+# tt-p150a provider, so Pi sends OpenAI-format requests to the model served by
+# util/tt-llm-server on :8000. Start that server first; check it with:
+#   curl -s localhost:${TT_LLM_PORT:-8000}/health
+#
+# Any extra args are forwarded to pi, e.g.:
+#   pi-p150a -p "explain demos/smoke_add.py"
+#   pi-p150a --model Llama-3.1-8B-Instruct
+#
+# Requires `pi` on PATH (npm: @earendil-works/pi-coding-agent). TT_ROOT is
+# exported by `sourceme`; falls back to the repo root when run unsourced.
+set -euo pipefail
+
+ROOT="${TT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+MODEL="${TT_LLM_MODEL:-Llama-3.1-8B-Instruct}"
+
+command -v pi >/dev/null 2>&1 || {
+	echo "pi-p150a: 'pi' not found on PATH. Install: npm i -g @earendil-works/pi-coding-agent" >&2
+	exit 1
+}
+
+exec pi \
+	--extension "${ROOT}/pi/tt-p150a-provider.ts" \
+	--provider tt-p150a \
+	--model "${MODEL}" \
+	"$@"
