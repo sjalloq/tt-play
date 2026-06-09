@@ -3,8 +3,9 @@ name = "tt-bringup"
 version = "0.1.0"
 description = "Tenstorrent Blackhole p150a bringup — tooling, firmware flashing, and experiments"
 requires-python = ">=3.10"
+# Required version baseline is tracked in docs/source/reference/current-state.rst.
 dependencies = [
-    "tt-flash>=3.8.0", # firmware flashing; >=3.6.0 avoids Blackhole board-ID loss
+    "tt-flash>=3.8.0", # firmware flashing
     "tt-smi>=5.2.0",   # system management / card verification
 ]
 

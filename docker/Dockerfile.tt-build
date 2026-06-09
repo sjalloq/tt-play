@@ -1,0 +1,23 @@
+# tt-metal-build:22.04 — toolchain image for building tt-metal from
+# third_party/tt-metal in a container (Arch is not a supported build host).
+#
+# Base is tt-metal's own dev image, built from the submodule first:
+#   docker build -f third_party/tt-metal/dockerfile/Dockerfile.basic-dev \
+#     --target basic-ttnn-runtime -t tt-metal-dev:22.04 third_party/tt-metal
+# (util/tt-build image does both steps.)
+#
+# This layer adds what Dockerfile.basic-dev leaves out for a full build:
+#   - the FULL install_dependencies.sh (basic-dev runs only `--sfpi`), which
+#     installs CMake 4.0.2 — Ubuntu 22.04's 3.22.1 is below tt-metal's 3.24 min.
+#   - file / lsb-release, used by tt-metal's cmake (version.cmake calls lsb_release).
+#   - git safe.directory, since the build runs as root over a uid-1000 worktree.
+ARG BASE=tt-metal-dev:22.04
+FROM ${BASE}
+
+RUN bash /opt/tt_metal_infra/scripts/docker/install_dependencies.sh
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends file lsb-release \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN git config --system --add safe.directory '*'

@@ -59,6 +59,7 @@ _ttbringup_setup() {
         "$(tt-flash --version 2>/dev/null || echo missing)" \
         "$(tt-smi --version 2>/dev/null || echo missing)"
     printf '    LLM: tt-llm-server (vLLM on p150) + pi-p150a (Pi agentic harness)\n'
+    printf '    build: tt-build (compile third_party/tt-metal in the 22.04 container)\n'
 }
 
 _ttbringup_setup "$@"

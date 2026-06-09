@@ -1,27 +1,40 @@
 #!/usr/bin/env bash
-# pi-p150a — launch the Pi coding agent wired to the local Blackhole p150 LLM.
+# pi-p150a — launch the Pi coding agent wired to the local p150 vLLM server.
 #
-# Loads the repo's provider extension (pi/tt-p150a-provider.ts) and selects the
-# tt-p150a provider, so Pi sends OpenAI-format requests to the model served by
-# util/tt-llm-server on :8000. Start that server first; check it with:
-#   curl -s localhost:${TT_LLM_PORT:-8000}/health
+# Auto-discovers everything from the running server (start it with
+# `util/tt-llm-server up`): the OpenAI base URL, the derived API key, and the
+# served model id (which is org-prefixed, e.g. meta-llama/Llama-3.1-8B-Instruct).
+# So this is a one-liner — no manual TT_LLM_* exports needed.
 #
-# Any extra args are forwarded to pi, e.g.:
-#   pi-p150a -p "explain demos/smoke_add.py"
-#   pi-p150a --model Llama-3.1-8B-Instruct
+# Override any of them by exporting TT_LLM_BASE_URL / TT_LLM_API_KEY / TT_LLM_MODEL.
+# Extra args pass through to pi, e.g.:  pi-p150a -p "explain demos/smoke_add.py"
 #
-# Requires `pi` on PATH (npm: @earendil-works/pi-coding-agent). TT_ROOT is
-# exported by `sourceme`; falls back to the repo root when run unsourced.
+# Requires `pi` on PATH (npm i -g @earendil-works/pi-coding-agent).
 set -euo pipefail
 
 ROOT="${TT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
-MODEL="${TT_LLM_MODEL:-Llama-3.1-8B-Instruct}"
+SERVER="${ROOT}/util/tt-llm-server"
 
 command -v pi >/dev/null 2>&1 || {
-	echo "pi-p150a: 'pi' not found on PATH. Install: npm i -g @earendil-works/pi-coding-agent" >&2
-	exit 1
-}
+	echo "pi-p150a: 'pi' not found on PATH. Install: npm i -g @earendil-works/pi-coding-agent" >&2; exit 1; }
 
+BASE_URL="${TT_LLM_BASE_URL:-$("${SERVER}" url)}"
+API_KEY="${TT_LLM_API_KEY:-$("${SERVER}" key)}"
+
+# Discover the served model id (the provider also does this, but pi needs --model up front).
+MODEL="${TT_LLM_MODEL:-}"
+if [ -z "${MODEL}" ]; then
+	MODEL="$(curl -s -H "Authorization: Bearer ${API_KEY}" --max-time 3 "${BASE_URL}/models" 2>/dev/null \
+		| python3 -c 'import sys,json
+try: print(json.load(sys.stdin)["data"][0]["id"])
+except Exception: pass' 2>/dev/null)"
+fi
+[ -n "${MODEL}" ] || {
+	echo "pi-p150a: no served model — is the server up? Check: util/tt-llm-server status" >&2
+	echo "          start it with:  util/tt-llm-server up" >&2; exit 1; }
+
+export TT_LLM_BASE_URL="${BASE_URL}" TT_LLM_API_KEY="${API_KEY}"
+echo "pi-p150a: ${MODEL} @ ${BASE_URL}" >&2
 exec pi \
 	--extension "${ROOT}/pi/tt-p150a-provider.ts" \
 	--provider tt-p150a \

@@ -37,6 +37,8 @@ docs/           Sphinx documentation (source/ + build/)
 - **Makefile targets are idempotent** — they check `dkms status` / systemd state before acting. Safe to re-run.
 - **Firmware is never touched automatically.** Flashing is a deliberate manual step (see `docs/source/bringup/firmware.rst`).
 - `src/` (cloned tt-kmd source) and `docs/build/` are gitignored.
+- **Don't ignore my requests.** If you think I'm mistaken, pause and ask a question, don't head off on a tangent.
+- **Assume everything we are doing is targetted at a single P150a**. Don't suggest running locally on the host; don't tell me models aren't built for a single P150; 
 
 ## Writing docs
 

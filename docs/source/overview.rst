@@ -28,7 +28,8 @@ The Tenstorrent stack is installed in five layers. Each :doc:`bringup
        venv on Python 3.12.
    * - 4
      - :doc:`Firmware <bringup/firmware>`
-     - On-card firmware bundle. Not flashed; card runs the shipped 18.10.0.
+     - On-card firmware bundle. Flashed to 19.10.0; version in
+       :doc:`reference/current-state`.
    * - 5
      - :doc:`Metalium <bringup/containers>`
      - Compute runtime (TT-NN / tt-metal). Run as a Docker container.
@@ -38,7 +39,7 @@ Getting started
 
 Prerequisites: BIOS *PCIe AER Reporting Mechanism* set to **OS First**, the
 card's blower fan connected, and kernel headers for the running kernel
-installed (``linux-headers``). See :doc:`hardware`.
+installed (``linux-headers``).
 
 .. code-block:: console
 
@@ -64,5 +65,4 @@ Repository layout
    ├── hugepages/        # systemd units + reservation script
    ├── demos/            # smoke_add.py — TT-NN elementwise-add smoke test
    ├── util/             # tt-metalium / tt-metalium-models / tt-forge container wrappers
-   ├── docs/             # This documentation (Sphinx, source/ + build/)
-   └── tt.guide.txt      # Planning notes
+   └── docs/             # This documentation (Sphinx, source/ + build/)

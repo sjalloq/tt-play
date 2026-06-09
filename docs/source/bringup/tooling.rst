@@ -13,19 +13,19 @@ The venv
 --------
 
 The tools live in a project-local venv managed by **uv**. Dependencies are
-declared in ``pyproject.toml`` and locked in ``uv.lock``:
+declared in ``pyproject.toml`` (the venv is lockless — there is no ``uv.lock``):
 
 .. code-block:: toml
 
    dependencies = [
-       "tt-flash>=3.8.0",   # >=3.6.0 required to avoid Blackhole board-ID loss
+       "tt-flash>=3.8.0",
        "tt-smi>=5.2.0",
    ]
 
 Activate by sourcing ``sourceme`` (it must be sourced, not executed, so the
-venv activates in the current shell). It runs ``uv sync`` (creates ``.venv``,
-resolves, locks, installs), activates the venv, and puts the ``util/``
-container wrappers on ``PATH``:
+venv activates in the current shell). It runs ``uv venv`` + ``uv pip install
+-e .`` (creates ``.venv``, resolves fresh from ``pyproject.toml``, installs),
+activates the venv, and puts the ``util/`` container wrappers on ``PATH``:
 
 .. code-block:: console
 

@@ -23,8 +23,8 @@ as benign; likely related to the unflashed firmware or the PCIe link state.
 Card not detected
 -----------------
 
-* **BIOS:** PCIe AER Reporting Mechanism must be **OS First** (see
-  :doc:`../hardware`) — most common cause.
+* **BIOS:** PCIe AER Reporting Mechanism must be **OS First** — most common
+  cause.
 * **Driver loaded:** ``lsmod | grep tenstorrent`` and
   ``sudo dmesg | grep -i tenstorrent``.
 * **Cold power-cycle:** on Blackhole p100/p150, "no devices detected" —
@@ -32,13 +32,13 @@ Card not detected
   power-cycle, not a warm reboot.
 * **Fan:** the blower header must be connected; an overheating card misbehaves.
 
-PCIe link trains at Gen2 x8
+PCIe link trains at Gen4 x8
 ---------------------------
 
-The p150a is Gen5 x16 capable but trains at Gen2 x8 on this workstation, capped
-by the upstream bridge ``00:03.2`` (~16× link-bandwidth loss). Re-check with
-``lspci`` after any BIOS update or re-seat. It limits host↔device throughput;
-it does not stop the card working.
+The p150a is Gen5 x16 capable but trains at Gen4 x8 on this workstation, capped
+by the upstream bridge ``00:03.2`` (~4× link-bandwidth loss). Re-check with
+``sudo lspci -vv -s 0000:0b:00.0`` (``LnkSta``) after any BIOS update or re-seat.
+It limits host↔device throughput; it does not stop the card working.
 
 uv cannot resolve tt-umd
 ------------------------

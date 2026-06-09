@@ -1,7 +1,9 @@
 Current state
 =============
 
-Verified snapshot, captured 2026-06-04 on host ``jalapeno``.
+Authoritative current state of the stack — the single source for live versions,
+firmware, link state, and install status. Update **this page** when any of them
+change; other pages cross-reference it rather than restating values.
 
 Stack
 -----
@@ -23,8 +25,8 @@ Stack
      - installed
      - 5.2.0 / 3.8.0 in the ``uv`` venv (Python 3.12.13)
    * - Firmware
-     - not flashed
-     - card at shipped bundle 18.10.0
+     - flashed
+     - bundle 19.10.0
    * - Metalium containers
      - pulled
      - slim (~4.3 GB) + models (~12.7 GB); wrappers in ``util/``
@@ -32,29 +34,47 @@ Stack
      - not pulled
      - pulls on first ``tt-forge`` run
    * - TT-NN smoke test
-     - not run
-     - ``demos/smoke_add.py`` ready
+     - passing
+     - ``demos/smoke_add.py`` → ``RESULT: PASS`` (:doc:`../verification`)
 
 Versions
 --------
 
-.. list-table::
-   :widths: 35 65
+Installed versus the baseline required by the Gemma 4 / tt-metal Blackhole build
+(branch ``arg/gemma4_optimizations``, ``INSTALLING.md``). All components meet or
+exceed the build baseline.
 
+.. list-table::
+   :header-rows: 1
+   :widths: 24 40 36
+
+   * - Component
+     - Installed
+     - Required (BH build)
    * - OS / kernel
      - Arch Linux, ``7.0.3-arch1-2``, x86-64
+     - Ubuntu 22.04 (build container)
+   * - Python
+     - 3.12.13 (venv)
+     - 3.10 (build container)
    * - tt-kmd
      - 2.8.0
+     - v2.5.0 or above ✓
    * - tt-smi
      - 5.2.0
+     - v3.0.38 or above ✓
    * - tt-flash
      - 3.8.0
+     - 3.8.0 ✓
    * - pyluwen
      - 0.8.5
+     - —
    * - tt-umd
      - 0.9.5
+     - —
    * - Firmware bundle
-     - 18.10.0 (``FLASH_BUNDLE_VERSION 0x120a0000``)
+     - 19.10.0
+     - 19.2.0 or above ✓ (:doc:`../bringup/firmware`)
 
 Device
 ------
@@ -73,6 +93,8 @@ Device
 
 Evidence
 --------
+
+Captured on host ``jalapeno``.
 
 .. code-block:: console
 

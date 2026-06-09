@@ -67,6 +67,5 @@ Expected state
 .. todo::
 
    Capture ``/health`` 200, ``/v1/models``, and a first Pi exchange once the
-   server has been booted against firmware bundle 18.10.0. The image pins
-   tt-metal ``55fd115``; if it requires a newer bundle than the shipped
-   18.10.0, the firmware flash in :doc:`firmware` becomes a prerequisite.
+   server has been booted. Firmware is at 19.10.0 (:doc:`firmware`); the image
+   pins tt-metal ``55fd115``.

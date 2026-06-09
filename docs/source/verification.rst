@@ -20,8 +20,8 @@ firmware bundle), one entry per card. See :doc:`reference/current-state` for
 the snapshot from this machine.
 
 No devices reported indicates: the driver is not loaded
-(``lsmod | grep tenstorrent``), the BIOS AER setting is wrong (see
-:doc:`hardware`), or the card needs a cold power-cycle.
+(``lsmod | grep tenstorrent``), the BIOS AER setting is wrong, or the card
+needs a cold power-cycle.
 
 TT-NN smoke test
 ----------------

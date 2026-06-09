@@ -1,73 +1,77 @@
 Layer 4 — Firmware
 ==================
 
-Firmware is **not flashed** by anything in this repo. The card runs the shipped
-bundle **18.10.0** (``FLASH_BUNDLE_VERSION 0x120a0000``), which is sufficient
-for the driver to enumerate it and for ``tt-smi`` to read full telemetry.
-``tt-flash`` 3.8.0 is installed in the venv for when an update is needed.
+Installed bundle: **19.10.0** (flashed from tt-system-firmware over the shipped
+18.10.0). Installed versus required versions are in
+:doc:`../reference/current-state`. The procedure below reflashes to the latest
+published bundle.
 
-Flashing is a deliberate manual step. It is not run automatically and the
-driver, firmware, and SMI versions must be mutually compatible.
+Firmware sources
+----------------
 
-Where firmware comes from
--------------------------
-
-Firmware bundles moved repositories. The old ``tenstorrent/tt-firmware`` repo
-was **archived 2026-02-25** and is read-only. Current releases live in
-`tt-system-firmware <https://github.com/tenstorrent/tt-system-firmware/releases>`_.
+Firmware bundles are published in two Tenstorrent repos. Flash from
+**tt-system-firmware**:
 
 .. list-table::
    :header-rows: 1
-   :widths: 30 25 45
+   :widths: 26 16 58
 
-   * - Item
-     - Value
-     - Notes
-   * - Latest stable bundle
-     - 19.10.0 (2026-06-01)
-     - ``fw_pack-19.10.0.fwbundle`` (universal, all boards)
-   * - Board-specific asset
-     - ``p150a.fwbundle``
-     - smaller, p150a only — either bundle works
-   * - Installed on card
-     - 18.10.0
-     - ``cm_fw`` 0.19.0.0; not yet updated
+   * - Repo
+     - Status
+     - Use
+   * - `tt-system-firmware <https://github.com/tenstorrent/tt-system-firmware/releases>`_
+     - current
+     - Flash from here. Active release stream.
+   * - `tt-firmware <https://github.com/tenstorrent/tt-firmware/releases>`_
+     - archived
+     - Read-only, superseded (last release 19.6.0). Do not use.
 
-Each release tag attaches a universal ``fw_pack-<ver>.fwbundle`` plus
-per-board ``*.fwbundle`` assets. ``tt-flash`` picks the entry matching the
-detected board, so the universal pack is the simplest choice.
+Each release tag attaches a universal ``fw_pack-<ver>.fwbundle`` (all boards)
+plus per-board assets (e.g. ``p150a.fwbundle``). ``tt-flash`` selects the entry
+matching the detected board, so the universal pack is the simplest choice.
 
-.. warning::
+Check for releases with ``gh`` or the web UI:
 
-   **Core-count reduction.** Bundle **19.5.0 and later** reduce the p150 Tensix
-   grid from 140 to 120 cores to match cards shipping from January 2026
-   (Tenstorrent quotes ~1–2 % workload impact). Flashing 19.x onto this card is
-   a one-way change to 120 cores. Staying on 18.10.0 keeps 140 cores. Decide
-   before flashing.
+.. code-block:: console
+
+   $ gh release list --repo tenstorrent/tt-system-firmware
+   $ gh release view v19.10.0 --repo tenstorrent/tt-system-firmware \
+       --json assets --jq '.assets[].name'
+
+Releases page: https://github.com/tenstorrent/tt-system-firmware/releases
 
 Procedure
 ---------
 
-#. Pick a target bundle. If a specific ``tt-metal`` release is the goal, match
-   driver + firmware + SMI to that release's compatibility matrix rather than to
-   the illustrative versions in any docs.
-#. Download the bundle into the repo (or anywhere on disk):
+#. Activate the venv so ``tt-flash`` / ``tt-smi`` are on ``PATH``:
+
+   .. code-block:: console
+
+      $ source sourceme
+
+#. Download the bundle (19.10.0 shown):
 
    .. code-block:: console
 
       $ curl -LO https://github.com/tenstorrent/tt-system-firmware/releases/download/v19.10.0/fw_pack-19.10.0.fwbundle
 
-#. Flash it. ``tt-flash`` takes the bundle as a positional argument and only
-   writes when the bundle version is newer than the ROM:
+#. Check what is currently on the card before writing:
 
    .. code-block:: console
 
-      $ tt-flash fw_pack-19.10.0.fwbundle
+      $ tt-flash verify        # reports running/flashed bundle
 
-   ``tt-flash flash <bundle>`` is the equivalent explicit form. Add ``--force``
-   to reflash an equal/older bundle.
+#. Flash. ``tt-flash`` takes the bundle as a positional argument and only writes
+   when the bundle version is newer than the ROM:
+
+   .. code-block:: console
+
+      $ tt-flash flash fw_pack-19.10.0.fwbundle
+
+   Add ``--force`` to reflash an equal/older bundle; ``--no-reset`` skips the
+   built-in reset.
 #. Let the built-in reset finish. ``tt-flash`` runs a ``Stage: RESET`` PCIe link
-   reset and waits up to 60 s for the ASIC to return. ``--no-reset`` skips it.
+   reset and waits up to 60 s for the ASIC to return.
 #. **Cold power-cycle** if the card does not re-enumerate. On Blackhole a "no
    devices detected" state after flashing typically clears only with a full
    power-off, not a warm reboot.
@@ -81,8 +85,7 @@ Procedure
 Expected output
 ---------------
 
-Illustrative run from the ``tt-flash`` README (upstream), flashing over an
-18.10.0 ROM — the same starting bundle as this card:
+A successful flash over an 18.10.0 ROM:
 
 .. code-block:: text
 
@@ -105,7 +108,5 @@ Illustrative run from the ``tt-flash`` README (upstream), flashing over an
     Finishing PCI link reset on BH devices at PCI indices: 0
    FLASH SUCCESS
 
-.. todo::
-
-   Capture the real before/after ``tt-smi`` bundle versions here once this card
-   is actually flashed, and update :doc:`../reference/current-state`.
+This card was flashed 18.10.0 → 19.10.0; ``tt-smi -s`` now reports
+``fw_bundle_version 19.10.0.0``.

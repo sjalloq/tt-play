@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# tt-build — build/run tt-metal (third_party/tt-metal) in the Ubuntu 22.04
+# toolchain container. Arch is not a supported build host, so compilation happens
+# in-container against the same toolchain upstream uses; artifacts persist on the
+# host in the submodule tree (build_Release/, python_env/ — root-owned, since the
+# container runs as root).
+#
+# The WHOLE repo is mounted at /work (not just the submodule) so the submodule's
+# relative .git gitlink (../../.git/modules/...) resolves and tt-metal's
+# git-derived version works. Build cache lives in $TT_CACHE_DIR/ccache.
+#
+#   build both toolchain images     build both toolchain images (tt-metal-dev + tt-metal-build)
+#   Release: tt_metal + ttnn     ./build_metal.sh --enable-ccache   (Release: tt_metal + ttnn)
+#   tt-build venv      ./create_venv.sh                   (python / ttnn env)
+#   tt-build all       metal + venv                       (default)
+#   tt-build shell     interactive shell in the container
+#   tt-build run <cmd...>   run an arbitrary command in the container
+#
+# TT_ROOT is exported by `sourceme`; falls back to the repo root when unsourced.
+# Override images via TT_BUILD_IMAGE / TT_BUILD_DEV_IMAGE.
+set -euo pipefail
+
+ROOT="${TT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+SRC="third_party/tt-metal"
+IMAGE="${TT_BUILD_IMAGE:-tt-metal-build:22.04}"
+DEV_IMAGE="${TT_BUILD_DEV_IMAGE:-tt-metal-dev:22.04}"
+CCACHE="${TT_CACHE_DIR:-${ROOT}/.cache}/ccache"
+mkdir -p "${CCACHE}"
+
+cmd="${1:-all}"; shift || true
+
+if [ "${cmd}" = "image" ]; then
+    # 1. tt-metal's own dev image (toolchain: clang-20, SFPI, uv/py3.10)
+    docker build \
+        -f "${ROOT}/${SRC}/dockerfile/Dockerfile.basic-dev" \
+        --target basic-ttnn-runtime -t "${DEV_IMAGE}" "${ROOT}/${SRC}"
+    # 2. our derived image (full deps incl. CMake 4.0.2)
+    docker build \
+        --build-arg "BASE=${DEV_IMAGE}" \
+        -f "${ROOT}/docker/Dockerfile.tt-build" -t "${IMAGE}" "${ROOT}/docker"
+    exit 0
+fi
+
+run() {  # run a shell command in the build container with the repo mounted
+    local tty=""; [ -t 1 ] && tty="-t"   # interactive only when attached to a terminal
+    # On-card runs (shell / run / demos) need the device + hugepages; the build
+    # (metal/venv) does not. Pass the card through whenever it is present so the
+    # same image can both build and run — harmless during compilation, and simply
+    # absent on a card-less host.
+    local dev=()
+    if [ -e /dev/tenstorrent ]; then
+        dev+=( --privileged
+               --device=/dev/tenstorrent:/dev/tenstorrent
+               --volume=/dev/hugepages-1G:/dev/hugepages-1G )
+    fi
+    exec docker run --rm -i ${tty} \
+        "${dev[@]}" \
+        --volume="${ROOT}":/work \
+        --workdir="/work/${SRC}" \
+        --env=TT_METAL_HOME="/work/${SRC}" \
+        --env=PYTHON_ENV_DIR="/work/${SRC}/python_env" \
+        --env=CCACHE_DIR=/work/.cache/ccache \
+        --env=CCACHE_MAXSIZE="${TT_CCACHE_MAXSIZE:-15G}" \
+        "${IMAGE}" bash -lc "$1"
+}
+
+case "${cmd}" in
+    metal) run './build_metal.sh --enable-ccache' ;;
+    venv)  run './create_venv.sh' ;;
+    all)   run './build_metal.sh --enable-ccache && ./create_venv.sh' ;;
+    shell) run 'exec bash' ;;
+    run)   run "$*" ;;
+    *) echo "tt-build: unknown command '${cmd}' (image|metal|venv|all|shell|run)" >&2; exit 2 ;;
+esac
